@@ -1,0 +1,29 @@
+FROM python:3.8.1-alpine
+
+# set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+ENV HOME=/home
+ENV APP_HOME=/home/app
+WORKDIR $APP_HOME
+
+# install dependencies
+RUN apk add --virtual python3-dev libffi-dev jpeg-dev zlib-dev musl-dev cairo-dev cairo pango-dev gdk-pixbuf gcc \
+    && apk add --no-cache mariadb-dev \
+    && apk add --no-cache git tzdata \
+    && apk add --no-cache font-misc-misc
+
+RUN cd $HOME/..
+RUN wget http://cdn.naver.com/naver/NanumFont/fontfiles/NanumFont_TTF_ALL.zip
+RUN mkdir /usr/share/fonts/nanumfont
+RUN unzip NanumFont_TTF_ALL.zip -d /usr/share/fonts/nanumfont/.
+
+RUN fc-cache -f && rm -rf /var/cache/*
+
+RUN pip3 install --upgrade pip
+COPY ./requirements.txt $APP_HOME/requirements.txt
+RUN pip3 install -r requirements.txt
+
+# copy project
+COPY . $APP_HOME

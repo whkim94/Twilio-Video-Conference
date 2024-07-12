@@ -1,0 +1,161 @@
+{% extends 'mypage/mypage.html' %}
+
+{% load static %}
+
+{% block css %}
+    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
+{% endblock %}
+
+
+{% block mypage_content %}
+
+    <div class="p-sm-4 border rounded">
+        <h1>화상 테스트</h1>
+
+        <hr class="divider py-sm-3">
+
+        <div class="pt-sm-3">
+            <div class="">
+                <h6>비디오</h6>
+                <div class="mt-sm-4" style="background-color: black;">
+                    <div class="" id="video-conf"></div>
+                </div>
+            </div>
+
+            <div class="pt-sm-4">
+                <div class="border rounded p-sm-3 m-0" style="width: 50%;">
+                    <h6>마이크</h6>
+                    <div class="pids-wrapper m-0" style="width: 100%">
+                        <div class="pid" style="width: calc(10% - 10px); height: 10px; display: inline-block; margin: 5px;"></div>
+                        <div class="pid" style="width: calc(10% - 10px); height: 10px; display: inline-block; margin: 5px;"></div>
+                        <div class="pid" style="width: calc(10% - 10px); height: 10px; display: inline-block; margin: 5px;"></div>
+                        <div class="pid" style="width: calc(10% - 10px); height: 10px; display: inline-block; margin: 5px;"></div>
+                        <div class="pid" style="width: calc(10% - 10px); height: 10px; display: inline-block; margin: 5px;"></div>
+                        <div class="pid" style="width: calc(10% - 10px); height: 10px; display: inline-block; margin: 5px;"></div>
+                        <div class="pid" style="width: calc(10% - 10px); height: 10px; display: inline-block; margin: 5px;"></div>
+                        <div class="pid" style="width: calc(10% - 10px); height: 10px; display: inline-block; margin: 5px;"></div>
+                        <div class="pid" style="width: calc(10% - 10px); height: 10px; display: inline-block; margin: 5px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <hr width="100%">
+        <strong>* 검은 화면만 나오고 카메라가 비춰지지 않는다면 브라우저에서 카메라와 마이크 허용을 했는지 다시한번 확인</strong>
+        <div class="pt-sm-4">
+            <div>
+                <h6>크롬</h6>
+                <small><a href="https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=ko" target="_blank">설명보기</a></small>
+            </div>
+            <div class="pt-sm-4">
+                <h6>익스플로러</h6>
+                <small>
+                    * <span>웹/브라우저 문제가 아닌 컴퓨터 자체 액세스 허용의 문제일 수 있습니다.</span> <br><br>
+
+
+                    <strong>[윈도우 10 이하]</strong> <br>
+                    제어판 -> 하드웨어 및 소리 -> 오디오 장치 관리 -> 녹음 -> 마이크 -> 속성 -> 음량 확인 <br>
+
+
+                    <strong>[윈도우 10]</strong> <br>
+                    Windows 설정 -> 개인 정보 -> 마이크/카메라 ->'앱에서 마이크(또는 카메라)에 액세스하도록 허용'에 켬으로 변경
+                </small>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+
+{% block script %}
+
+    <script type="text/javascript">
+        function colorPids(vol) {
+            let all_pids = $('.pid');
+            let amout_of_pids = Math.round(vol/10);
+            let elem_range = all_pids.slice(0, amout_of_pids);
+            for (var i = 0; i < all_pids.length; i++) {
+                all_pids[i].style.backgroundColor="#e6e7e8";
+            }
+            for (var i = 0; i < elem_range.length; i++) {
+
+                // console.log(elem_range[i]);
+                elem_range[i].style.backgroundColor="#69ce2b";
+            }
+        }
+
+        navigator.getUserMedia = navigator.getUserMedia ||
+            navigator.webkitGetUserMedia ||
+            navigator.mozGetUserMedia;
+
+        if (navigator.getUserMedia) {
+            navigator.getUserMedia({ audio: true, video: { width: 1280, height: 720 } },
+                function(stream) {
+                    //console.log('Webcam and mic are working GREAT!')
+                    audioContext = new AudioContext();
+                    analyser = audioContext.createAnalyser();
+                    microphone = audioContext.createMediaStreamSource(stream);
+                    javascriptNode = audioContext.createScriptProcessor(2048, 1, 1);
+
+                    analyser.smoothingTimeConstant = 0.8;
+                    analyser.fftSize = 1024;
+
+                    microphone.connect(analyser);
+                    analyser.connect(javascriptNode);
+                    javascriptNode.connect(audioContext.destination);
+
+                    javascriptNode.onaudioprocess = function() {
+                        var array = new Uint8Array(analyser.frequencyBinCount);
+                        analyser.getByteFrequencyData(array);
+                        var values = 0;
+
+                        var length = array.length;
+                        for (var i = 0; i < length; i++) {
+                            values += (array[i]);
+                        }
+
+                        var average = values / length;
+
+                        //console.log(Math.round(average));
+
+                        colorPids(average);
+
+                    }
+                },
+                function(err) {
+                    if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+                        //required track is missing
+                    } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+                        //webcam or mic are already in use
+                        console.log('Webcam or mic is already in use');
+                    } else if (err.name === "OverconstrainedError" || err.name === "ConstraintNotSatisfiedError") {
+                        //constraints can not be satisfied by avb. devices
+                    } else if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+                        //permission denied in browser
+                        console.log('Cam permission is denied in browser');
+                    } else if (err.name === "TypeError" || err.name === "TypeError") {
+                        //empty constraints object
+                    } else {
+                        //other errors
+                    }
+                }
+            );
+        } else {
+            console.log("getUserMedia not supported");
+        }
+    </script>
+
+    <script src="https://media.twiliocdn.com/sdk/js/video/releases/2.0.0/twilio-video.min.js"></script>
+    <script type="text/javascript">
+
+        const Video = Twilio.Video;
+
+        Video.createLocalVideoTrack().then(track => {
+            const localMediaContainer = document.getElementById('video-conf');
+            localMediaContainer.appendChild(track.attach());
+        });
+
+
+
+    </script>
+{% endblock %}
