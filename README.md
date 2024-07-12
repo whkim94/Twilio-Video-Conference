@@ -12,10 +12,6 @@ The full stack Django project demonstrating Twilio Video Conference including ch
 
 * Django HTML Template with Twilio CDN and Javascript
 
-
-
-# Twilio Video Conference with WebSocket Chat
-
 # Getting Started
 
 First clone the repository from Github and check codes:
